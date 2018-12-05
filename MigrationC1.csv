@@ -1,13 +1,3 @@
 Site,Group,UpdateLogo
-clients/abbott,5,TRUE
-clients/ach2,5,TRUE
-clients/Alcon,7,TRUE
-clients/appleeve,7,TRUE
-clients/avoderm,7,TRUE
-clients/Bayer,8,TRUE
-clients/BeechNut,8,TRUE
-clients/bellcarterfoods,8,TRUE
-clients/Blistex,9,TRUE
-clients/Britvic,9,TRUE
-clients/bumblebee,10,TRUE
-clients/CCA,10,TRUE
+clients/alpha,5,TRUE
+clients/beta,5,TRUE
