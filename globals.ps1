@@ -3,10 +3,10 @@
 Set-Variable  SRC_USER_NAME         -value  "asm\SP15P.Farm"
 Set-Variable  UNRESOLVED_USER_NAME  -value  "SG1.service@advantagesolutions.net"
 
-Set-Variable  SRC_ROOT_URL          -value  "https://www.asmconnects.com/" 
-Set-Variable  DEST_ADMIN_URL        -value  "https://advantagesolutionsnet-admin.sharepoint.com/"
-Set-Variable  DEST_ROOT_URL         -value  "https://advantagesolutionsnet.sharepoint.com/"
-Set-Variable  SITE_LOGO_URL         -value  "https://advantagesolutionsnet.sharepoint.com/SiteAssets/connectslogo.png"
+Set-Variable  SRC_ROOT_URL          -value  "https://www.acme.com/" 
+Set-Variable  DEST_ADMIN_URL        -value  "https://acme-admin.sharepoint.com/"
+Set-Variable  DEST_ROOT_URL         -value  "https://acme.sharepoint.com/"
+Set-Variable  SITE_LOGO_URL         -value  "https://acme.sharepoint.com/SiteAssets/connectslogo.png"
 
 Set-Variable  SERVER_PREFIX         -value  "CSHAREGATEP"
   
