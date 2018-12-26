@@ -1,5 +1,5 @@
-Function PurgeSiteCollection($url)
-{
+Function PurgeSiteCollection {
+    param([parameter(Mandatory = $true)]$url)
 
     # delete site collection if it exists
     try {
@@ -21,7 +21,12 @@ Function PurgeSiteCollection($url)
 
 }
 
-Function PurgeAll($adminUrl, $rootUrl, $credentials, $SCs, $tag = "") {
+Function PurgeAll {
+    param([parameter(Mandatory = $true)] $adminUrl, 
+        [parameter(Mandatory = $true)] $rootUrl, 
+        [parameter(Mandatory = $true)][Management.Automation.PSCredential] $credentials, 
+        [parameter(Mandatory = $true)] $SCs, 
+        $tag = "") 
 
     Connect-SPOService -Url $adminUrl -Credential $credentials
 	
@@ -43,20 +48,29 @@ Function PurgeAll($adminUrl, $rootUrl, $credentials, $SCs, $tag = "") {
     Disconnect-SPOService
 
 }
-Function CreateSiteCollection($userName, $url, $siteName) {
-
-
+Function CreateSiteCollection {
+    param([parameter(Mandatory = $true)]$userName, 
+        [parameter(Mandatory = $true)]$url, 
+        [parameter(Mandatory = $true)]$siteName) 
 
     New-SPOSite  -Title $siteName -Owner $userName  -Url $url -StorageQuota 26214400  -TimeZoneId 13 -LocaleId 1033  -Template STS#0
     Set-SPOUser -Site $url  -LoginName $userName -IsSiteCollectionAdmin $True
 
 }
 
-Function CreateAll($credentials, $adminUrl, $userName, $rootUrl, $SCs, $tag = "") {
+Function CreateAll {
+    param([parameter(Mandatory = $true)] [Management.Automation.PSCredential] $credentials, 
+        [parameter(Mandatory = $true)]$adminUrl, 
+        [parameter(Mandatory = $true)]$userName, 
+        [parameter(Mandatory = $true)]$rootUrl, 
+        [parameter(Mandatory = $true)]$SCs, 
+        $tag = "") 
 	
     Connect-SPOService -Url $adminUrl -Credential $credentials
 	
     foreach ($sc in $SCs) {
+        
+        $siteName = $sc.destName.Substring($sc.destName.LastIndexOf('/') + 1)  #remove path from siteName
 
         $destName = $sc.destName + $tag
         $url = $rootUrl + $destName
@@ -64,7 +78,7 @@ Function CreateAll($credentials, $adminUrl, $userName, $rootUrl, $SCs, $tag = ""
         try {
             Write-host "Creating "$destName -foregroundcolor Green
              
-            CreateSiteCollection -userName $userName -url $url -siteName $destName
+            CreateSiteCollection -userName $userName -url $url -siteName $siteName
         }
         catch {
             $ErrorMessage = $_.Exception.Message

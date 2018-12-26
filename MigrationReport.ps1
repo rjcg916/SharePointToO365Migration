@@ -1,5 +1,5 @@
 Function Convert-ExcelToCsv {
-    <#
+<#
 .DESCRIPTION
 Will convert a XLSX to a CSV.
 .PARAMETER Path
@@ -45,8 +45,10 @@ The path to output the CSV to
     }
 }
 
-Function Get-MigrationReport($srcPath, $destPath)
-{
+Function Get-MigrationReport {
+    param([parameter(Mandatory = $true)]$srcPath, 
+        [parameter(Mandatory = $true)]$destPath)
+
     
     #generate filtered CSV output 
 
@@ -55,40 +57,43 @@ Function Get-MigrationReport($srcPath, $destPath)
     $Csv = Import-Csv $destPath
             
     $FilteredCsv = $Csv | Where-Object { 
-                                  (($_.Status -eq 'Error')   -or  
-                                   ($_.Status -eq 'Warning')     ) -and
-                                  ($_.Title -ne 'MicroFeed')   -and
-                                  ($_.Type -ne 'User')  -and ($_.Type -ne 'Group') -and
-                                  ($_.Details -notlike '*Cannot make the form template browser enabled.*') -and 
-                                  ($_.Details -notlike '*address exceeds the limit of 255 characters*') -and 
-                                  ($_.Details -notlike '*not supported by the Insane Mode*')  -and 
-                                  ($_.Details -notlike '*The following values are unavailable*')  -and 
-                                  ($_.Details -notlike '*This content type contains an InfoPath form.*')  -and 
-                                  ($_.Details -notlike '*access requests settings were not copied*')  -and
-                                  ($_.Details -notlike '*The text was truncated*')  -and
-                                  ($_.Details -notlike '*parent content type is missing, the closest parent content type*')  -and
-                                  ($_.Details -notlike '*The default site template*') -and 
-                                  ($_.Details -notlike '*This value is required.*') -and
-                                  ($_.Details -notlike '*When migrating managed metadata*') -and
-                                  ($_.Details -notlike '*Document ID Service feature cannot be automatically activated.*') -and
-                                  ($_.Details -notlike '*are not currently supported by the Insane Mode*') -and
-                                  ($_.Details -notlike '*there are multiple matching items at the destination*') -and
-                                  ($_.Details -notlike '*Show item-level*') -and
-                                  ($_.Details -notlike '*was created with the default list template*') -and
-                                  ($_.Details -notlike '*correct zone could not be found*') -and 
-                                  ($_.Details -notlike '*user does not exist or is not unique*') -and
-                                  ($_.Details -notlike '*Item does not exist.*')
-                                 }
+        (($_.Status -eq 'Error') -or  
+            ($_.Status -eq 'Warning')     ) -and
+        ($_.Title -ne 'MicroFeed') -and
+        ($_.Type -ne 'User') -and ($_.Type -ne 'Group') -and
+        ($_.Details -notlike '*Cannot make the form template browser enabled.*') -and 
+        ($_.Details -notlike '*address exceeds the limit of 255 characters*') -and 
+        ($_.Details -notlike '*not supported by the Insane Mode*') -and 
+        ($_.Details -notlike '*The following values are unavailable*') -and 
+        ($_.Details -notlike '*This content type contains an InfoPath form.*') -and 
+        ($_.Details -notlike '*access requests settings were not copied*') -and
+        ($_.Details -notlike '*The text was truncated*') -and
+        ($_.Details -notlike '*parent content type is missing, the closest parent content type*') -and
+        ($_.Details -notlike '*The default site template*') -and 
+        ($_.Details -notlike '*This value is required.*') -and
+        ($_.Details -notlike '*When migrating managed metadata*') -and
+        ($_.Details -notlike '*Document ID Service feature cannot be automatically activated.*') -and
+        ($_.Details -notlike '*are not currently supported by the Insane Mode*') -and
+        ($_.Details -notlike '*there are multiple matching items at the destination*') -and
+        ($_.Details -notlike '*Show item-level*') -and
+        ($_.Details -notlike '*was created with the default list template*') -and
+        ($_.Details -notlike '*correct zone could not be found*') -and 
+        ($_.Details -notlike '*user does not exist or is not unique*') -and
+        ($_.Details -notlike '*Item does not exist.*') -and
+        ($_.Details -notlike '*All alerts of*') -and 
+        ($_.Details -notlike '*missing at destination. The default content type*')
+    }
     
     $FilteredCsv | Export-Csv  -Path $destPath -Force
 }
 
-Function MigrationReportAll($scanDirectory)
-{
+Function MigrationReportAll {
+    param([parameter(Mandatory = $true)]$scanDirectory)
+
     Write-Host  "Creating Migration Reports . . . " -foregroundColor Green    
   
     Get-ChildItem -Path $scanDirectory -Filter *.xlsx   -File -Name| ForEach-Object {
-        $fullName =  $scanDirectory + [System.IO.Path]::GetFileNameWithoutExtension($_)
+        $fullName = $scanDirectory + [System.IO.Path]::GetFileNameWithoutExtension($_)
 
         Get-MigrationReport -srcPath "$fullName.xlsx" -destPath "$fullName.csv"
     }

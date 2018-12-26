@@ -1,5 +1,6 @@
-
-Function Set-WebLogo($siteLogoUrl, $web) {
+Function Set-WebLogo {
+    param([parameter(Mandatory = $true)] $siteLogoUrl,
+        [parameter(Mandatory = $true)] $web) 
     try {
         Set-PnPWeb -SiteLogoUrl $siteLogoUrl -Web $web     
     }
@@ -9,7 +10,9 @@ Function Set-WebLogo($siteLogoUrl, $web) {
     }
 }
 
-Function Set-SiteLogo($conn, $siteLogoUrl) {
+Function Set-SiteLogo {
+    param([parameter(Mandatory = $true)]$conn, 
+        [parameter(Mandatory = $true)]$siteLogoUrl) 
 
     #set all lists in Root Web to use ClassicExperience
     $rootWeb = Get-PnPWeb -Connection $conn
@@ -23,11 +26,15 @@ Function Set-SiteLogo($conn, $siteLogoUrl) {
 
 }
 
-Function Set-LogoAll($credentials, $rootUrl, $siteLogoUrl, $SCs, $tag = "") {
+Function Set-LogoAll {
+    param([parameter(Mandatory = $true)][Management.Automation.PSCredential] $credentials, 
+        [parameter(Mandatory = $true)]$rootUrl, 
+        [parameter(Mandatory = $true)]$siteLogoUrl, 
+        [parameter(Mandatory = $true)] $SCs, 
+        $tag = "") 
     
     foreach ($sc in $SCs) {
 
-        $srcName = $sc.srcName
         $destName = $sc.destName + $tag
 
         $fullUrl = $rootUrl + $destName

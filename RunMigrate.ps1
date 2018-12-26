@@ -1,6 +1,6 @@
 $ScriptDirectory = Split-Path -Path $MyInvocation.MyCommand.Definition -Parent
 try {
-    . ("$ScriptDirectory\MigrateMain.ps1")  
+    . ("$ScriptDirectory\MainMigrate.ps1")  
    
 }
 catch {
@@ -8,15 +8,19 @@ catch {
     Write-Host $ErrorMessage -ForegroundColor Red
 }
 
-# Group 2,5,6, 8, 9, Client 1 - Initial Migration Run
-# MigrateMain -migrationSites "$ScriptDirectory\MigrationG8.csv"
-# MigrateMain -migrationSites "$ScriptDirectory\MigrationC1.csv"
-# RefreshMain -migrationSites "$ScriptDirectory\MigrationCatman.csv"
-# MigrateMain -migrationSites "$ScriptDirectory\MigrationC2.csv"
-# MigrateMain -migrationSites "$ScriptDirectory\MigrationC3.csv"
-#  MigrateMain -migrationSites "$ScriptDirectory\MigrationC4.csv"
-# Group 8,9; Client Group 1 in queue for Refresh
-# RefreshMain -migrationSites "$ScriptDirectory\MigrationG8.csv"
-# RefreshMain -migrationSites "$ScriptDirectory\MigrationG9.csv"
-#RefreshMain -migrationSites "$ScriptDirectory\MigrationG8.csv"
-MigrateMain -migrationSites "$ScriptDirectory\MigrationITDept.csv" -tag "-dev"
+#5
+#MigrateMain -migrationSites "$ScriptDirectory\MigrationGroups\MigrationG11.csv"
+#7
+#MigrateMain -migrationSites "$ScriptDirectory\MigrationGroups\MigrationG12.csv"
+#8
+#MigrateMain -migrationSites "$ScriptDirectory\MigrationGroups\MigrationEEDSupport.csv"
+#10
+#MigrateMain -migrationSites "$ScriptDirectory\MigrationGroups\Migrationretailops.csv"
+#RefreshMain -migrationSites "$ScriptDirectory\MigrationGroups\MigrationG10.csv"
+
+#RefreshMain -migrationSites "$ScriptDirectory\MigrationGroups\MigrationITDept.csv" -tag "-dev"
+
+#5
+RefreshMain -migrationSites "$ScriptDirectory\MigrationGroups\MigrationFinanceAndAccounting.csv" 
+#7
+RefreshMain -migrationSites "$ScriptDirectory\MigrationGroups\MigrationG12.csv" 

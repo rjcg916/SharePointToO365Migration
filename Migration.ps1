@@ -1,5 +1,28 @@
-﻿
-Function MigrateSiteCollection($migrateArgs, $unresolvedUserName, $destName, $srcSite, $destSite) {
+﻿$ScriptDirectory = Split-Path -Path $MyInvocation.MyCommand.Definition -Parent
+
+try {
+    . ("$ScriptDirectory\Alerts.ps1")
+  
+}
+catch {
+    $ErrorMessage = $_.Exception.Message
+    Write-Host $ErrorMessage -ForegroundColor Red
+}
+
+
+Set-Variable MIGRATION_PHASE_INITIAL    -value "Initial"
+Set-Variable MIGRATION_PHASE_REFRESH    -value "Refresh"
+
+Set-Variable MIGRATION_TYPE_STRUCTURAL  -value "Structural"
+Set-Variable MIGRATION_TYPE_CONTENT     -value "Content"
+
+Function MigrateSiteCollection {
+    param([parameter(Mandatory = $true)] $migrationType, 
+        [parameter(Mandatory = $true)] $migrateArgs, 
+        [parameter(Mandatory = $true)] $unresolvedUserName,
+        [parameter(Mandatory = $true)] $destName, 
+        [parameter(Mandatory = $true)] $srcSite, 
+        [parameter(Mandatory = $true)] $destSite) 
    
     #get CopySettings
     $copySettings = New-CopySettings @migrateArgs
@@ -12,12 +35,15 @@ Function MigrateSiteCollection($migrateArgs, $unresolvedUserName, $destName, $sr
     $dateStamp = Get-Date -Format FileDate
     $pathRoot = $destName.Replace('/', '-') 
     $xlsxPath = $pathRoot + "-" + $dateStamp + ".xlsx"
-    $csvPath  = $pathRoot + "-" + $dateStamp + ".csv"
 
     Write-Host  "Migrating site to " $destName -foregroundColor Green
 
-    #copy
-    $result = Copy-Site  -Site $srcSite -DestinationSite  $destSite -InsaneMode   -Merge -Subsites -VersionLimit 1  -WaitForImportCompletion -CopySettings $copySettings -MappingSettings $mappingSettings 
+    if ($migrationType -eq $MIGRATION_TYPE_STRUCTURAL) {
+        $result = Copy-Site -NoContent  -UserAlerts -Site $srcSite -DestinationSite  $destSite -InsaneMode   -Merge -Subsites -VersionLimit 1  -WaitForImportCompletion -CopySettings $copySettings -MappingSettings $mappingSettings 
+    }
+    else {
+        $result = Copy-Site -UserAlerts -Site $srcSite -DestinationSite  $destSite -InsaneMode   -Merge -Subsites -VersionLimit 1  -WaitForImportCompletion -CopySettings $copySettings -MappingSettings $mappingSettings     
+    }
 
     #export migration report
     Export-Report  -Overwrite $result -Path $xlsxPath 
@@ -26,7 +52,39 @@ Function MigrateSiteCollection($migrateArgs, $unresolvedUserName, $destName, $sr
     
 }
 
-Function MigrateAll($migrateArgs, $unresolvedUserName, $srcRootUrl, $srcCredentials, $destRootUrl, $SCs, $tag = "") {	
+
+
+Function MigrateSites {
+    param([parameter(Mandatory = $true)] $migrationType, 
+        [parameter(Mandatory = $true)] $Connections, 
+        [parameter(Mandatory = $true)] $migrateArgs, 
+        [parameter(Mandatory = $true)] $unresolvedUserName) 
+    # use connections to run migrations (no user input required)
+
+    foreach ($connection in $Connections) {
+        try {      
+
+            # perform the  migration
+            MigrateSiteCollection -migrationType $migrationType -migrateArgs $migrateArgs -unresolvedUserName $unresolvedUserName -destName $connection.destName -srcSite $connection.srcSite -destSite $connection.destSite
+
+        }
+        catch {
+            $ErrorMessage = $_.Exception.Message
+            Write-Host $ErrorMessage -ForegroundColor Red
+        }
+    }
+
+}
+Function MigrateAll {
+    param([parameter(Mandatory = $true)] $migratePhase, 
+        [parameter(Mandatory = $true)] $migrateArgs, 
+        [parameter(Mandatory = $true)] $unresolvedUserName, 
+        [parameter(Mandatory = $true)] $srcRootUrl, 
+        [parameter(Mandatory = $true)] [Management.Automation.PSCredential] $srcCredentials, 
+        [parameter(Mandatory = $true)] [Management.Automation.PSCredential] $destCredentials, 
+        [parameter(Mandatory = $true)] $destRootUrl, 
+        [parameter(Mandatory = $true)] $SCs, 
+        $tag = "") 	
 
     # First, build a list of connections to source/destination sites
     # Then, use these connections to run migration 
@@ -34,7 +92,8 @@ Function MigrateAll($migrateArgs, $unresolvedUserName, $srcRootUrl, $srcCredenti
     # NOTE: this separation allows input to be provided up-front and unattend
     # script execution
      
-    # Part 1 of 2: transform list of site collections to list of source and destination connections (user input required here)
+
+    # transform list of site collections to list of source and destination connections (user input required here)
 
     $Connections = @()
     $credentialsSite = $null
@@ -53,7 +112,8 @@ Function MigrateAll($migrateArgs, $unresolvedUserName, $srcRootUrl, $srcCredenti
                 Write-Host "Enter Credentials for Site " $urlDest -ForegroundColor Green
                 $destSite = Connect-Site -Url $urlDest -Browser
                 $credentialsSite = $destSite
-            } else {
+            }
+            else {
                 Write-Host "Reusing Credentials for Site " $urlDest -ForegroundColor Green    
                 $destSite = Connect-Site -Url $urlDest -UseCredentialsFrom $credentialsSite
             }
@@ -62,7 +122,7 @@ Function MigrateAll($migrateArgs, $unresolvedUserName, $srcRootUrl, $srcCredenti
             $urlSrc = $srcRootUrl + $srcName
             $srcSite = Connect-Site -Url $urlSrc -Credential $srcCredentials		
 
-            $ConnectionProperties = @{destName = $destName; srcSite = $srcSite; destSite = $destSite}  
+            $ConnectionProperties = @{destName = $destName; srcSite = $srcSite; destSite = $destSite; urlDest = $urlDest}  
             $ConnectionObject = New-Object PSObject –Property $ConnectionProperties
 
             $Connections += $ConnectionObject
@@ -74,42 +134,22 @@ Function MigrateAll($migrateArgs, $unresolvedUserName, $srcRootUrl, $srcCredenti
     }
 
 
-    # Part 2 of 2: use connections to run migrations (no user input required)
-
-    foreach ($connection in $Connections) {
-        try {            
-            MigrateSiteCollection -migrateArgs $migrateArgs -unresolvedUserName $unresolvedUserName -destName $connection.destName -srcSite $connection.srcSite -destSite $connection.destSite      
-        }
-        catch {
-            $ErrorMessage = $_.Exception.Message
-            Write-Host $ErrorMessage -ForegroundColor Red
-        }
-    }
-}
-
-Function Migrate($srcCredentials, $srcRootUrl, $destRootUrl, $unresolvedUserName, $SCs, $tag = "") {
-
-    $migrateArgs = @{OnContentItemExists = "Overwrite";
-                      OnSiteObjectExists = "Merge";
-                      OnWarning = "Continue";
-                      OnError = "Skip";
-                      ErrorAction = "Continue";
-                      WarningAction = "Continue" 
+    # if this is first migration, perform structural migration first
+    if ($MIGRATION_PHASE_INITIAL -eq $migratePhase) {
+        
+        MigrateSites  -migrationType $MIGRATION_TYPE_STRUCTURAL  -Connections $Connections -migrateArgs $migrateArgs -unresolvedUserName $unresolvedUserName
+    
     }
 
-    #Migrate all Site Collections
-    MigrateAll -migrateArgs $migrateArgs -unresolvedUserName $unresolvedUserName -srcRootUrl $srcRootUrl -srcCredentials $srcCredentials -destRootUrl $destRootUrl -SCs $SCs -tag $tag
-}
+    #turn off alerts
+    
+    Set-SiteAlertsByConnections -Credentials $destCredentials -Connections $Connections -Status "Off"
 
-Function Refresh($srcCredentials, $srcRootUrl, $adminUrl, $userName, $destRootUrl, $unresolvedUserName, $SCs, $tag = "") {
-     $migrateArgs = @{OnContentItemExists = "Incremental";
-                      OnSiteObjectExists = "Merge";
-                      OnWarning = "Continue";
-                      OnError = "Skip";
-                      ErrorAction = "Continue"; 
-                      WarningAction = "Continue" 
-    }  
+    #always do content migration
+    MigrateSites -migrationType $MIGRATION_TYPE_CONTENT  -Connections $Connections -migrateArgs $migrateArgs -unresolvedUserName $unresolvedUserName
 
-    #Migrate all Site Collections
-    MigrateAll -migrateArgs $migrateArgs -unresolvedUserName $unresolvedUserName -srcRootUrl $srcRootUrl -srcCredentials $srcCredentials -destRootUrl $destRootUrl -SCs $SCs -tag $tag
+    #turn on alerts
+    Set-SiteAlertsByConnections -Credentials $destCredentials -Connections $Connections -Status "On"
+
+    
 }
